@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"time"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -418,7 +418,7 @@ func (cnc *CloudNodeController) getNodeModifiersFromCloudProvider(ctx context.Co
 		providerID, err = cloudprovider.GetInstanceProviderID(ctx, cnc.cloud, types.NodeName(node.Name))
 		if err == nil {
 			nodeModifiers = append(nodeModifiers, func(n *v1.Node) {
-				if n.Spec.ProviderID == "" {
+				if n.Spec.ProviderID == "" && providerID != "" {
 					n.Spec.ProviderID = providerID
 				}
 			})
@@ -464,6 +464,10 @@ func (cnc *CloudNodeController) getNodeModifiersFromCloudProvider(ctx context.Co
 	instanceMeta, err := instanceMetadataGetter(providerID, node.Name, node)
 	if err != nil {
 		return nil, err
+	}
+
+	if node.Spec.ProviderID == "" && instanceMeta.ProviderID != "" {
+		nodeModifiers = append(nodeModifiers, func(n *v1.Node) { n.Spec.ProviderID = instanceMeta.ProviderID })
 	}
 
 	// If user provided an IP address, ensure that IP address is found
