@@ -98,6 +98,11 @@ func DefaultLoadBalancerName(service *v1.Service) string {
 
 // GetInstanceProviderID builds a ProviderID for a node in a cloud.
 func GetInstanceProviderID(ctx context.Context, cloud Interface, nodeName types.NodeName) (string, error) {
+	if _, ok := cloud.InstancesV2(); ok {
+		// We don't need providerID when we call InstanceMetadata for InstancesV2
+		return "", nil
+	}
+	
 	instances, ok := cloud.Instances()
 	if !ok {
 		return "", fmt.Errorf("failed to get instances from cloud provider")
